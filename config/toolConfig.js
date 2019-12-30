@@ -1,4 +1,5 @@
 const tool = {
+    genSaltSync: 10, //加密长度
     isNull(obj) {
 
     },

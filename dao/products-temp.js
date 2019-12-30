@@ -6,9 +6,9 @@ const extend = require('extend');
 var salt = bcrypt.genSaltSync(config.genSaltSync);
 
 module.exports = {
-  add: function(req, res, next) {
+  add: function (req, res, next) {
     var _products = new Products(req.body);
-    _products.save(function(err, products) {
+    _products.save(function (err, products) {
       if (err) {
         console.log(err);
       } else {
@@ -20,9 +20,9 @@ module.exports = {
       }
     });
   },
-  updateById: function(req, res) {
+  updateById: function (req, res) {
     var productParams = req.body;
-    Products.findById(req.body._id, function(err, product) {
+    Products.findById(req.body._id, function (err, product) {
       console.log('product', product);
       if (err) {
         res.json({
@@ -49,30 +49,12 @@ module.exports = {
         });
       }
     });
-
-    // console.log(req, req.body)
-    // Products.save(req.body, err => {
-    //     if (err) {
-    //         res.json({
-    //             code: 200,
-    //             status: false,
-    //             msg: '更新失败'
-    //         });
-    //     } else {
-    //         res.json({
-    //             code: 200,
-    //             status: true,
-    //             msg: '更新成功'
-    //         });
-    //     }
-    // })
   },
-  delById: function(req, res) {
-    Products.remove(
-      {
+  delById: function (req, res) {
+    Products.remove({
         _id: req.body._id
       },
-      function(err) {
+      function (err) {
         if (err) {
           res.json({
             code: 200,
@@ -89,12 +71,11 @@ module.exports = {
       }
     );
   },
-  findListByObj: function(req, res) {
-    Products.findById(
-      {
+  findListByObj: function (req, res) {
+    Products.findById({
         _id: req.query._id
       },
-      function(err, products) {
+      function (err, products) {
         if (err) {
           console.log(err);
         } else {
@@ -103,8 +84,8 @@ module.exports = {
       }
     );
   },
-  findAllList: function(req, res) {
-    Products.fetch(function(err, products) {
+  findAllList: function (req, res) {
+    Products.fetch(function (err, products) {
       if (err) {
         console.log(err);
       } else {
