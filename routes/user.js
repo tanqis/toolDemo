@@ -1,6 +1,6 @@
-var express = require('express');
-var router = express.Router();
-var userDao = require('../dao/userDao');
+let express = require('express');
+let router = express.Router();
+let userDao = require('../dao/userDao');
 
 // 查询所有用户数据ById
 router.get('/queryAllById', function (req, res, next) {

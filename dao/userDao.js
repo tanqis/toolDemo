@@ -1,11 +1,12 @@
 const mysql = require('mysql');
 const dbConfig = require('../config/dbConfig');
-var toolConfig = require('../config/toolConfig');
-var bcrypt = require('bcryptjs');
+let toolConfig = require('../config/toolConfig');
+let cookieConfig = require('../config/cookieConfig');
+let bcrypt = require('bcryptjs');
 const SQL = require('../sql/userMapping');
 // const pool = mysql.createPool(dbConfig.mysql);
 const connection = mysql.createConnection(dbConfig.mysql);
-var salt = bcrypt.genSaltSync(toolConfig.genSaltSync);
+let salt = bcrypt.genSaltSync(toolConfig.genSaltSync);
 
 // 向前台返回JSON方法的简单封装
 const resultJson = function (response, result, error) {
@@ -16,9 +17,7 @@ const resultJson = function (response, result, error) {
             msg: '操作失败'
         });
     } else {
-        console.log(result);
         response.json(result);
-        console.log('a');
     }
 };
 
@@ -56,7 +55,7 @@ const userDao = {
     },
     delete(req, res, next) {
         pool.getConnection(function (err, connection) {
-            var id = +req.query.id;
+            let id = +req.query.id;
             connection.query(SQL.delete, id, function (err, result) {
                 if (result.affectedRows > 0) {
                     result = {
@@ -74,7 +73,7 @@ const userDao = {
     update(req, res, next) {
         // update by id
         // 为了简单，要求同时传name和age两个参数
-        var param = req.body;
+        let param = req.body;
         if (param.name == null || param.age == null || param.id == null) {
             resultJson(res, undefined);
             return;
@@ -101,7 +100,7 @@ const userDao = {
         // });
     },
     queryAllById(req, res, next) {
-        var id = req.query.id;
+        let id = req.query.id;
         // pool.getConnection(function (err, connection) {
         connection.query(SQL.queryAllById, id, function (err, result) {
             resultJson(res, result, err);
@@ -110,7 +109,7 @@ const userDao = {
         // });
     },
     queryCountByAccount(req, res, next) {
-        var userAccount = req.body.userAccount;
+        let userAccount = req.body.userAccount;
         connection.query(SQL.queryCountByAccount, userAccount, function (
             err,
             result
@@ -119,7 +118,7 @@ const userDao = {
         });
     },
     queryAllByAccount(req, res, next) {
-        var userAccount = req.query.userAccount;
+        let userAccount = req.query.userAccount;
         connection.query(SQL.queryAllByAccount, userAccount, function (err, result) {
             resultJson(res, result, err);
         });
@@ -158,6 +157,7 @@ const userDao = {
                 if (logInId) {
                     connection.query(SQL.queryAllById, logInId, function (err, result) {
                         req.session.userInfo = Object.values(result[0])[1];
+                        console.log("log", req.session.userInfo)
                         resultJson(res, result, err);
                     });
                 } else {
@@ -177,8 +177,14 @@ const userDao = {
         });
     },
     logOut(req, res, next) {
-        delete req.session.userInfo;
-        res.clearCookie(config.sessionId);
+        try {
+            req.session.userInfo = null
+            delete req.session.userInfo;
+            res.clearCookie(cookieConfig.secret);
+        } catch (error) {
+            console.log(error)
+        }
+
         res.json({
             code: 200,
             status: true,
