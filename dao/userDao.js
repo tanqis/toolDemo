@@ -1,23 +1,27 @@
 const mysql = require('mysql');
 const dbConfig = require('../config/dbConfig');
-let toolConfig = require('../config/toolConfig');
-let cookieConfig = require('../config/cookieConfig');
-let bcrypt = require('bcryptjs');
+const toolConfig = require('../config/toolConfig');
+const cookieConfig = require('../config/cookieConfig');
+const bcrypt = require('bcryptjs');
 const SQL = require('../sql/userMapping');
-// const pool = mysql.createPool(dbConfig.mysql);
 const connection = mysql.createConnection(dbConfig.mysql);
-let salt = bcrypt.genSaltSync(toolConfig.genSaltSync);
+const salt = bcrypt.genSaltSync(toolConfig.genSaltSync);
 
-// 向前台返回JSON方法的简单封装
-const resultJson = function (response, result, error) {
-    if (typeof result === 'undefined') {
-        response.json({
+const resultJson = function (err, res, result, msg = '') {
+    if (err) {
+        res.json({
             code: 200,
             status: false,
-            msg: '操作失败'
+            msg: msg ? msg : '操作失败',
+            data: result
         });
     } else {
-        response.json(result);
+        res.json({
+            code: 200,
+            status: true,
+            msg: msg ? msg : '操作成功',
+            data: result
+        });
     }
 };
 
@@ -37,19 +41,10 @@ const userDao = {
                     nowTime
                 ];
                 connection.query(SQL.insert, params, function (err, result) {
-                    //   resultJson(err, result);
-                    res.json({
-                        code: 200,
-                        status: true,
-                        msg: '注册成功'
-                    });
+                    resultJson(err, res, null, '注册成功');
                 });
             } else {
-                res.json({
-                    code: 200,
-                    status: false,
-                    msg: '该账号已经被注册'
-                });
+                resultJson(true, res, null, '该账号已经被注册');
             }
         });
     },
@@ -75,7 +70,7 @@ const userDao = {
         // 为了简单，要求同时传name和age两个参数
         let param = req.body;
         if (param.name == null || param.age == null || param.id == null) {
-            resultJson(res, undefined);
+            resultJson(err, result);
             return;
         }
 
@@ -100,32 +95,32 @@ const userDao = {
         // });
     },
     queryAllById(req, res, next) {
-        let id = req.query.id;
+        const id = req.query.id;
         // pool.getConnection(function (err, connection) {
         connection.query(SQL.queryAllById, id, function (err, result) {
-            resultJson(res, result, err);
+            resultJson(err, res, result);
             // connection.release();// pool释放连接
         });
         // });
     },
     queryCountByAccount(req, res, next) {
-        let userAccount = req.body.userAccount;
+        const userAccount = req.body.userAccount;
         connection.query(SQL.queryCountByAccount, userAccount, function (
             err,
             result
         ) {
-            resultJson(res, result, err);
+            resultJson(err, res, result);
         });
     },
     queryAllByAccount(req, res, next) {
-        let userAccount = req.query.userAccount;
+        const userAccount = req.query.userAccount;
         connection.query(SQL.queryAllByAccount, userAccount, function (err, result) {
-            resultJson(res, result, err);
+            resultJson(err, res, result);
         });
     },
     queryAll(req, res, next) {
         connection.query(SQL.queryAll, function (err, result) {
-            resultJson(res, result, err);
+            resultJson(err, res, result);
         });
     },
     logIn(req, res, next) {
@@ -157,39 +152,25 @@ const userDao = {
                 if (logInId) {
                     connection.query(SQL.queryAllById, logInId, function (err, result) {
                         req.session.userInfo = Object.values(result[0])[1];
-                        console.log("log", req.session.userInfo)
-                        resultJson(res, result, err);
+                        resultJson(err, res, result, '登录成功');
                     });
                 } else {
-                    res.json({
-                        code: 200,
-                        status: false,
-                        msg: '账号或者密码错误'
-                    });
+                    resultJson(true, res, null, '账号或者密码错误');
                 }
             } else {
-                res.json({
-                    code: 200,
-                    status: false,
-                    msg: '该账号没有注册'
-                });
+                resultJson(true, res, null, '该账号没有注册');
             }
         });
     },
     logOut(req, res, next) {
         try {
-            req.session.userInfo = null
+            req.session.userInfo = null;
             delete req.session.userInfo;
             res.clearCookie(cookieConfig.secret);
         } catch (error) {
-            console.log(error)
+            console.log(error);
         }
-
-        res.json({
-            code: 200,
-            status: true,
-            msg: '注销成功'
-        });
+        resultJson(false, res, null, '退出成功');
     }
 };
 
