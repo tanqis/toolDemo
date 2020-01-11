@@ -1,11 +1,12 @@
 const mysql = require('mysql');
 const dbConfig = require('../config/dbConfig');
 const toolConfig = require('../config/toolConfig');
-const cookieConfig = require('../config/cookieConfig');
+// const cookieConfig = require('../config/cookieConfig');
 const bcrypt = require('bcryptjs');
 const SQL = require('../sql/userMapping');
 const connection = mysql.createConnection(dbConfig.mysql);
 const salt = bcrypt.genSaltSync(toolConfig.genSaltSync);
+const jwtTool = require('../config/jwt')
 
 const resultJson = function (err, res, result, msg = '') {
     if (err) {
@@ -126,13 +127,13 @@ const userDao = {
     logIn(req, res, next) {
         const userPwd = req.body.userPwd;
         const userAccount = req.body.userAccount;
+
         connection.query(SQL.queryByAccount, userAccount, function (err, result) {
-            // countSize = Object.values(result[0])[0]
             if (result.length > 0) {
                 let logInId = null;
                 for (let i = 0; i < result.length; i++) {
-                    const item = Object.values(result[i]);
-                    const userPwdDB = item[2];
+                    const item = result[i]
+                    const userPwdDB = item.UserPwd;
                     const userPwdStr = userPwdDB.substr(0, 29);
                     let userPwdNew = '';
                     try {
@@ -145,14 +146,17 @@ const userDao = {
                         });
                     }
                     if (userPwdDB === userPwdNew) {
-                        logInId = item[0];
+                        logInId = item.id;
                         break;
                     }
                 }
                 if (logInId) {
                     connection.query(SQL.queryAllById, logInId, function (err, result) {
-                        req.session.userInfo = Object.values(result[0])[1];
-                        resultJson(err, res, result, '登录成功');
+                        resultJson(err, res, {
+                            Authorization: jwtTool.generateToken({
+                                ...result[0]
+                            })
+                        }, '登录成功');
                     });
                 } else {
                     resultJson(true, res, null, '账号或者密码错误');
@@ -163,14 +167,14 @@ const userDao = {
         });
     },
     logOut(req, res, next) {
-        try {
-            req.session.userInfo = null;
-            delete req.session.userInfo;
-            res.clearCookie(cookieConfig.secret);
-        } catch (error) {
-            console.log(error);
-        }
-        resultJson(false, res, null, '退出成功');
+        //     try {
+        //         req.session.userInfo = null;
+        //         delete req.session.userInfo;
+        //         res.clearCookie(cookieConfig.secret);
+        //     } catch (error) {
+        //         console.log(error);
+        //     }
+        //     resultJson(false, res, null, '退出成功');
     }
 };
 
